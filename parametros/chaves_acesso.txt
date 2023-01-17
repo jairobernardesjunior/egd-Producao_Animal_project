@@ -1,0 +1,3 @@
+iiiiiiiiiiiiiiiiiiiiiiiii access_key iam
+sssssssssssssssssssssssss secret_key iam
+us-east-1
