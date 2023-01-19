@@ -37,7 +37,6 @@ def baixa_arquivo(url, dirAux, nome_arquivo):
 
 def verifica_arquivo(url):
     # ******************** VERIFICA SE ARQUIVO EXISTE NO SITE DO IBGE
-    #nome_arquivo = url[len(url) -16: len(url)]
     response = requests.get(url, verify=False, timeout=None) 
     return response.status_code
 
@@ -47,7 +46,6 @@ def lambda_handler(event, context):
     dirAux = 'arquivos_baixados_ibge'
     dirPar = 'parametros'
     s3_dados_raw = 'pa-s3-abate-csv-bruto'
-    s3_dados_processed = 'pa-s3-abate-json-transformados'
     s3_parametros = 'pa-s3-parametros'
     arq_ultimo_baixado = 'ultimo_arq_abate_baixado.txt'
     arq_keys = 'chaves_acesso.txt'
@@ -90,7 +88,6 @@ def lambda_handler(event, context):
     ano= int(url[len(url) -10 : len(url) -6])
     trimestre= int(url[len(url) -6 : len(url) -4])
     ano_corrente = int(datetime.date.today().year)
-    trimestre_corrente = int(str((int(datetime.date.today().month) / 4) + 1)[0:1])
 
     # ******************** MONTA O NOME DO ARQUIVO DO ULTIMO TRIMESTRE PARA BAIXAR
     ultimaURL= ''
@@ -168,7 +165,7 @@ def lambda_handler(event, context):
         if retorno != True:
             print(retorno)
             print('bucket s3 => ' + s3_parametros + ' arquivo => ' + path_arquivo + 
-                ' ***** não foi carregado')
+                  ' --- ' + retorno + ' ***** não foi carregado')
             exit()      
 
 lambda_handler(1, 1)

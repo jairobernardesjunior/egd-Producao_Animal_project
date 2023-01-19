@@ -1,0 +1,4 @@
+          mes   ano trimestre  quantidade_bovinos  quantidade_suinos  quantidade_frangos
+0      Julho   2022         3            2594.438           4744.988          509944.833
+1     Agosto   2022         3            2694.735           5004.570          531562.042
+2   Setembro   2022         3            2564.407           4703.489          509714.979

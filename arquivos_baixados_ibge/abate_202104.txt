@@ -1,0 +1,4 @@
+          mes   ano trimestre  quantidade_bovinos  quantidade_suinos  quantidade_frangos
+0    Outubro   2021         4            2140.070           4352.888          504778.900
+1   Novembro   2021         4            2220.916           4375.294          506982.676
+2   Dezembro   2021         4            2537.345           4647.058          531275.550

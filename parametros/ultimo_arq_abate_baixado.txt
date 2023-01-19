@@ -1,1 +1,1 @@
-https://ftp.ibge.gov.br/Producao_Pecuaria/1_Pesquisa_Trimestral_do_Abate_de_Animais/Resultados_completos/abate_202203.xls
+https://ftp.ibge.gov.br/Producao_Pecuaria/1_Pesquisa_Trimestral_do_Abate_de_Animais/Resultados_completos/abate_201604.xls
