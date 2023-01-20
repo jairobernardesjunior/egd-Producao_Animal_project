@@ -40,6 +40,11 @@ def verifica_arquivo(url):
     response = requests.get(url, verify=False, timeout=None) 
     return response.status_code
 
+def SalvaUltimaURL(pathArquivo, ultimaURL):
+    arquivo = open(pathArquivo,'w')
+    arquivo.write(ultimaURL)
+    arquivo.close      
+
 def lambda_handler(event, context):
     # ******************** INÍCIO
 
@@ -155,9 +160,7 @@ def lambda_handler(event, context):
     # ******************** ALTERA ULTIMO ARQUIVO PROCESSADO E SOBE PARA O BUCKET S3
     if len(ultimaURL) > 0: # grava a posição do último arquivo pmc.xls baixado
         path_arquivo = dirPar + barra + arq_ultimo_baixado
-        arquivo = open(path_arquivo,'w')
-        arquivo.write(ultimaURL)
-        arquivo.close  
+        SalvaUltimaURL(path_arquivo, ultimaURL)
         
         retorno = ups3.upload_s3(
                 s3_parametros, arq_ultimo_baixado, path_arquivo, access_key, secret_key, regiao)
