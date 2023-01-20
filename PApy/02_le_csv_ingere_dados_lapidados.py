@@ -5,6 +5,8 @@
 import os
 import datetime
 import pandas as pd
+import redshift_connector as rsc
+import pandas_redshift as pr
 from fc import fc_download_s3 as ds3
 from fc import fc_upload_s3 as ups3
 from fc import fc_monta_dados_abate as mga
@@ -33,13 +35,38 @@ def grava_sobes3_arquivo_json_lapidado(
     return nome_arquivocsv    
 
 def le_arqcsv_grava_dados_lapidados(
-        dirAux, nome_arquivo, ano, tri, s3_dados_processed, access_key, secret_key, regiao):
+        dirAux, nome_arquivo, ano, tri, s3_dados_processed, access_key, secret_key, regiao,
+        host_i, database_i, user_i, password_i, porta_i):
+
     # ******************** LE O ARQUIVO CSV A SER LAPIDADO E GRAVA EM BASE DE DADOS
     tabela= pd.read_csv(dirAux + '/' + nome_arquivo)
     retorno_df= mga.monta_dados_abate(tabela, ano, tri)
 
-    return grava_sobes3_arquivo_json_lapidado(
-                dirAux, nome_arquivo, retorno_df, s3_dados_processed, access_key, secret_key, regiao)
+    nome_arquivocsv =  grava_sobes3_arquivo_json_lapidado(
+                            dirAux, nome_arquivo, retorno_df, s3_dados_processed, 
+                            access_key, secret_key, regiao)
+
+    # ******************** INCLUI DF NA TABELA TB_ABATE DO REDSHIFT
+    pr.connect_to_redshift(dbname = database_i,
+                            host = host_i,
+                            port = porta_i,
+                            user = user_i,
+                            password = password_i)
+
+    pr.connect_to_s3(aws_access_key_id = access_key,
+                        aws_secret_access_key = secret_key,
+                        bucket = s3_dados_processed,
+                        subdirectory = 'df')
+
+    # Write the DataFrame to S3 and then to redshift
+    pr.pandas_to_redshift(data_frame = retorno_df,
+                          redshift_table_name = 'tb_abate')
+
+    # ******************** INCLUI DF NA TABELA TB_ABATE DO DYNAMODB
+
+
+    
+    return nome_arquivocsv
 
 def SalvaUltimoARQ(pathArquivo, ultimoARQ):
     arquivo = open(pathArquivo,'w')
@@ -65,11 +92,30 @@ def lambda_handler(event, context):
 
     # ******************** LE O ARQUIVO DE CHAVES
     arquivo = open(dirPar + barra + arq_keys,'r')
+
     access_key = arquivo.readline()
     access_key = access_key[0:len(access_key) -1]
+
     secret_key = arquivo.readline()
     secret_key = secret_key[0:len(secret_key) -1]
+
     regiao = arquivo.readline()
+    regiao = regiao[0:len(regiao) -1]
+
+    host_i = arquivo.readline()
+    host_i = host_i[0:len(host_i) -1]
+
+    database_i = arquivo.readline()
+    database_i = database_i[0:len(database_i) -1]
+
+    user_i = arquivo.readline()
+    user_i = user_i[0:len(user_i) -1]
+
+    password_i = arquivo.readline()  
+    password_i = password_i[0:len(password_i) -1]    
+
+    porta_i = arquivo.readline()     
+
     arquivo.close()   
 
     # ******************** CHAMA A FUNÇÃO DE DOWNLOAD DO BUCKET S3 - BAIXA .CSV BRUTO
@@ -95,6 +141,23 @@ def lambda_handler(event, context):
     trimestre= int(arqCSV[len(arqCSV) -6 : len(arqCSV) -4])
     ano_corrente = int(datetime.date.today().year)
 
+    # ******************** CONECTA O REDSHIFT APAGA TRIMESTRE MENOR QUE 4
+    conn = rsc.connect(
+        host=host_i,
+        database=database_i,
+        user=user_i,
+        password=password_i)
+
+    with conn.cursor() as sql_cursor:
+        sql_cursor.execute('delete from tb_abate where trimestre<4')
+
+    sql_cursor.close
+    conn.commit
+    conn.close
+
+    # ******************** CONECTA O dynamoDB
+    
+
     # ******************** MONTA O NOME DO ARQUIVO CSV DO ULTIMO TRIMESTRE
     if trimestre == 4:
         ano= ano +1    
@@ -109,7 +172,9 @@ def lambda_handler(event, context):
                     access_key, secret_key, regiao)
         if retorno == True:
             ultimoARQ = le_arqcsv_grava_dados_lapidados(
-                dirAux, nome_arquivo, ano, '04', s3_dados_processed, access_key, secret_key, regiao)
+                dirAux, nome_arquivo, ano, '04', 
+                s3_dados_processed, access_key, secret_key, regiao,
+                host_i, database_i, user_i, password_i, porta_i)   
         else:
 
             nome_arquivo= arqCSV[0: len(arqCSV) -10] + str('%04d' % ano) + '03.csv'
@@ -119,8 +184,10 @@ def lambda_handler(event, context):
                         dirAux + barra + nome_arquivo, 
                         access_key, secret_key, regiao)
             if retorno == True:
-                ultimoARQ = le_arqcsv_grava_dados_lapidados(dirAux, nome_arquivo, ano, '03',
-                    s3_dados_processed, access_key, secret_key, regiao)               
+                ultimoARQ = le_arqcsv_grava_dados_lapidados(
+                    dirAux, nome_arquivo, ano, '03',
+                    s3_dados_processed, access_key, secret_key, regiao,
+                    host_i, database_i, user_i, password_i, porta_i)              
             else:
 
                 nome_arquivo= arqCSV[0: len(arqCSV) -10] + str('%04d' % ano) + '02.csv'
@@ -130,8 +197,10 @@ def lambda_handler(event, context):
                             dirAux + barra + nome_arquivo, 
                             access_key, secret_key, regiao)
                 if retorno == True:
-                    ultimoARQ = le_arqcsv_grava_dados_lapidados(dirAux, nome_arquivo, ano, '02',
-                        s3_dados_processed, access_key, secret_key, regiao)                 
+                    ultimoARQ = le_arqcsv_grava_dados_lapidados(
+                        dirAux, nome_arquivo, ano, '02',
+                        s3_dados_processed, access_key, secret_key, regiao,
+                        host_i, database_i, user_i, password_i, porta_i)                 
                 else:
 
                     nome_arquivo= arqCSV[0: len(arqCSV) -10] + str('%04d' % ano) + '01.csv'
@@ -141,8 +210,10 @@ def lambda_handler(event, context):
                                 dirAux + barra + nome_arquivo, 
                                 access_key, secret_key, regiao)
                     if retorno == True:
-                        ultimoARQ = le_arqcsv_grava_dados_lapidados(dirAux, nome_arquivo, ano, '01',
-                            s3_dados_processed, access_key, secret_key, regiao)                    
+                        ultimoARQ = le_arqcsv_grava_dados_lapidados(
+                            dirAux, nome_arquivo, ano, '01',
+                            s3_dados_processed, access_key, secret_key, regiao,
+                            host_i, database_i, user_i, password_i, porta_i)                  
                     else:                                    
                         print('***** arquivo: ' + dirAux + barra + nome_arquivo + ' não encontrado') 
                         resulte = False 
