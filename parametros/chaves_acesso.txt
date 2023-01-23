@@ -1,5 +1,5 @@
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+xxxxxxxxxxxxxxxxxxxxxxxxxx
+yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 us-east-1
 examplecluster.abc123xyz789.us-west-1.redshift.amazonaws.com
 dev

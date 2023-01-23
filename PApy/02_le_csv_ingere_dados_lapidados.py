@@ -62,10 +62,6 @@ def le_arqcsv_grava_dados_lapidados(
     pr.pandas_to_redshift(data_frame = retorno_df,
                           redshift_table_name = 'tb_abate')
 
-    # ******************** INCLUI DF NA TABELA TB_ABATE DO DYNAMODB
-
-
-    
     return nome_arquivocsv
 
 def SalvaUltimoARQ(pathArquivo, ultimoARQ):
@@ -154,10 +150,7 @@ def lambda_handler(event, context):
     sql_cursor.close
     conn.commit
     conn.close
-
-    # ******************** CONECTA O dynamoDB
     
-
     # ******************** MONTA O NOME DO ARQUIVO CSV DO ULTIMO TRIMESTRE
     if trimestre == 4:
         ano= ano +1    
